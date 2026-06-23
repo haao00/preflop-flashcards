@@ -45,3 +45,4 @@ RFI,BTN,AKo,100,2.5
 ```
 
 同梱デッキは提供画像をもとにした `UTG/HJ/CO/BTN/SB` のRFI練習用データです。赤い面積を10%刻みのオープン頻度として扱い、UTGのA2sは40% openになっています。
+# preflop-flashcards
