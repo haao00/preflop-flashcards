@@ -2816,3 +2816,47 @@ body.is-home #statsButton {
 #studyScreen.is-sb:not(.is-reviewing) .action-strip button {
   height: 32px;
 }
+
+
+/* Restore true marker positions, compact review next button, move level to review only */
+#studyScreen.is-reviewing .feedback-level {
+  display: inline-grid;
+  justify-self: start;
+  min-height: 24px;
+  padding: 3px 9px;
+  border: 1px solid rgba(242, 198, 103, 0.38);
+  border-radius: 999px;
+  background: rgba(242, 198, 103, 0.12);
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+#studyScreen.is-reviewing .submit-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#studyScreen.is-reviewing #checkButton {
+  width: min(170px, 44%);
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 0.92rem;
+  border-radius: 8px;
+}
+
+.feedback-meter .compare-track {
+  margin-inline: 30px !important;
+}
+
+.compare-ticks {
+  padding-inline: 18px;
+}
+
+@media (max-height: 760px) {
+  #studyScreen.is-reviewing #checkButton {
+    min-height: 36px;
+    font-size: 0.9rem;
+  }
+}

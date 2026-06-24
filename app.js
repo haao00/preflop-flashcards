@@ -494,6 +494,7 @@ function renderMistakeFeedback(card, guessedFrequency, guessedCall, guessedRaise
       <span>-${lastPot.penalty} chips</span>
     </div>
     <div class="feedback-summary">正解と選択位置</div>
+    <div class="feedback-level">${lastPot.level || ""}</div>
     ${advice}
     ${reason}
     <div class="feedback-meters">${rows}</div>
@@ -521,11 +522,7 @@ function meterMarkup(label, answerPercent, guessPercent, answerLabel, guessLabel
 }
 
 function clampPercent(value) {
-  return markerPercent(value);
-}
-
-function markerPercent(value) {
-  return Math.max(6, Math.min(94, Number(value) || 0));
+  return Math.max(0, Math.min(100, Number(value) || 0));
 }
 
 function renderComparison(card, guessedFrequency, guessedCall, guessedRaise) {
@@ -546,7 +543,7 @@ function renderComparison(card, guessedFrequency, guessedCall, guessedRaise) {
 }
 
 function setMarker(marker, percent) {
-  marker.style.left = `${markerPercent(percent)}%`;
+  marker.style.left = `${Math.max(0, Math.min(100, percent))}%`;
 }
 
 function raiseToPercent(value) {
@@ -582,7 +579,7 @@ function updateRewards() {
 }
 
 function renderPot() {
-  els.potStatus.textContent = `${currentPot.level} · 正解 +${currentPot.reward} / ミス -${currentPot.penalty}`;
+  els.potStatus.textContent = `正解 +${currentPot.reward} / ミス -${currentPot.penalty}`;
   els.potStatus.classList.toggle("is-risky", currentPot.tier === "hard");
 }
 
