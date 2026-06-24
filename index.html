@@ -337,8 +337,23 @@
               <svg class="pie-chart" id="pieChart" viewBox="0 0 180 120" role="img" aria-label="正解とミスの比率"></svg>
             </div>
             <div class="chart-card wide-chart">
-              <span>チップ推移</span>
-              <svg class="line-chart" id="chipChart" viewBox="0 0 240 110" role="img" aria-label="チップ推移"></svg>
+              <div class="chart-card-head">
+                <span>チップ増減</span>
+                <select id="chipWindow" aria-label="チップ増減の集計範囲">
+                  <option value="100">直近100</option>
+                  <option value="500">直近500</option>
+                  <option value="1000">直近1000</option>
+                  <option value="2000">直近2000</option>
+                  <option value="5000">直近5000</option>
+                  <option value="all">all</option>
+                </select>
+              </div>
+              <svg class="line-chart" id="chipChart" viewBox="0 0 280 140" role="img" aria-label="チップ増減"></svg>
+              <div class="chart-metrics" id="chipMetrics"></div>
+            </div>
+            <div class="chart-card wide-chart">
+              <span>ポジション別 未回答率</span>
+              <div class="bar-chart" id="unseenChart" role="img" aria-label="ポジション別未回答率"></div>
             </div>
           </div>
         </div>

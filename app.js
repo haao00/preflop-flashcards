@@ -206,6 +206,9 @@ const els = {
   positionChart: document.querySelector("#positionChart"),
   pieChart: document.querySelector("#pieChart"),
   chipChart: document.querySelector("#chipChart"),
+  chipWindow: document.querySelector("#chipWindow"),
+  chipMetrics: document.querySelector("#chipMetrics"),
+  unseenChart: document.querySelector("#unseenChart"),
   chartNote: document.querySelector("#chartNote"),
   positionStats: document.querySelector("#positionStats"),
   weakList: document.querySelector("#weakList"),
@@ -309,25 +312,34 @@ function positionRank(position) {
   return rank === -1 ? Number.MAX_SAFE_INTEGER : rank;
 }
 
-function applyFilters() {
+function currentSource() {
+  return customDrill || deck;
+}
+
+function visibleCards() {
   const spot = els.spotFilter.value;
   const position = els.positionFilter.value;
   const mode = els.modeFilter.value;
   const randomAll = els.orderFilter.value === "random-all";
-  const source = customDrill || deck;
-  filtered = source.filter((card) => {
+  return currentSource().filter((card) => {
     const stat = stats[cardId(card)];
+    const attempts = (stat?.good || 0) + (stat?.miss || 0);
     if (customDrill) return true;
     if (spot !== "all" && card.spot !== spot) return false;
     if (!randomAll && position !== "all" && card.position !== position) return false;
     if (mode === "missed" && (!stat || stat.miss === 0)) return false;
-    if (mode === "unseen" && stat) return false;
+    if (mode === "unseen" && attempts > 0) return false;
     return true;
   });
+}
+
+function applyFilters() {
+  filtered = visibleCards();
   index = Math.min(index, Math.max(filtered.length - 1, 0));
   answered = false;
   currentCorrect = false;
   currentRevealed = false;
+  initInputsForCurrentCard();
   render();
 }
 
@@ -352,7 +364,7 @@ function render() {
     els.cardKicker.textContent = "No cards";
     els.handTitle.textContent = "Empty";
     els.cardArt.replaceChildren();
-    els.answerStatus.textContent = "Deckを調整してください";
+    els.answerStatus.textContent = els.modeFilter.value === "unseen" ? "未回答の問題はありません" : "Deckを調整してください";
     updateAccuracy();
     return;
   }
@@ -370,6 +382,7 @@ function render() {
   els.flashcard.classList.toggle("is-review", reviewing);
   els.studyScreen.classList.toggle("is-reviewing", reviewing);
   els.studyScreen.classList.toggle("is-correct-result", correctResult);
+  els.studyScreen.classList.toggle("is-miss-result", reviewing && !currentCorrect);
   els.controls.hidden = reviewing || correctResult;
   els.quizControls.hidden = reviewing || correctResult;
   if (els.actionStrip) els.actionStrip.hidden = true;
@@ -478,7 +491,7 @@ function showResult(card, revealed = false) {
   els.resultPanel.classList.toggle("is-correct", true);
   els.resultPanel.classList.toggle("is-miss", false);
   els.resultTitle.textContent = "正解";
-  els.resultDetail.textContent = `正解: ${card.openFrequency}% open${callText} / ${correctRaise} · +${lastPot.reward} chips · ${lastPot.explain}`;
+  els.resultDetail.textContent = `正解: ${card.openFrequency}% open${callText} / ${correctRaise} · +${lastPot.reward} chips · 未回答残り ${unseenCountForCurrentScope()} hand · ${lastPot.explain}`;
   renderComparison(card, guessedFrequency, guessedCall, guessedRaise);
 }
 
@@ -497,7 +510,7 @@ function renderMistakeFeedback(card, guessedFrequency, guessedCall, guessedRaise
       <strong>もう一歩</strong>
       <span>-${lastPot.penalty} chips</span>
     </div>
-    <div class="feedback-summary">正解と選択位置</div>
+    <div class="feedback-summary">正解と選択位置 · 未回答残り ${unseenCountForCurrentScope()} hand</div>
     <div class="feedback-level">${lastPot.level || ""}</div>
     ${advice}
     ${reason}
@@ -736,11 +749,15 @@ function renderPositionStats() {
       row.className = "position-row";
       row.type = "button";
       row.dataset.position = position;
+      const unseen = cards.filter((card) => {
+        const stat = stats[cardId(card)] || {};
+        return (stat.good || 0) + (stat.miss || 0) === 0;
+      }).length;
       row.innerHTML = `
         <span>${position}</span>
         <b>${rate}%</b>
         <i><em style="width:${rate}%"></em></i>
-        <small>${total} hands · miss ${totals.miss}</small>
+        <small>${total} hands · 未回答 ${unseen}</small>
       `;
       return row;
     })
@@ -753,6 +770,7 @@ function renderCharts(good, miss) {
   renderPositionBarChart();
   renderPieChart(good, miss);
   renderChipChart();
+  renderUnseenChart();
 }
 
 function renderAccuracyChart() {
@@ -816,16 +834,47 @@ function renderPieChart(good, miss) {
 }
 
 function renderChipChart() {
-  const points = history.slice(-30).map((item) => item.chips);
-  if (!points.length) {
+  const selected = els.chipWindow?.value || "100";
+  const limit = selected === "all" ? history.length : Number(selected);
+  const recent = history.slice(-limit);
+  if (!recent.length) {
     renderEmptyChart(els.chipChart, "まだ履歴なし");
+    if (els.chipMetrics) els.chipMetrics.textContent = "";
     return;
   }
-  renderLineChart(els.chipChart, points, { suffix: "", target: 0 });
+  let total = 0;
+  const points = recent.map((item) => {
+    total += Number(item.delta || 0);
+    return total;
+  });
+  renderLineChart(els.chipChart, points, { suffix: "", target: 0, width: 280, height: 140 });
+  const avg = total / recent.length;
+  if (els.chipMetrics) {
+    els.chipMetrics.innerHTML = `<span>対象 ${recent.length} hands</span><strong>${total >= 0 ? "+" : ""}${total} chips</strong><span>平均 ${avg >= 0 ? "+" : ""}${avg.toFixed(1)}</span>`;
+  }
+}
+
+function renderUnseenChart() {
+  if (!els.unseenChart) return;
+  const rows = positionOrder.map((position) => {
+    const cards = deck.filter((card) => card.position === position);
+    const unseen = cards.filter((card) => {
+      const stat = stats[cardId(card)] || {};
+      return (stat.good || 0) + (stat.miss || 0) === 0;
+    }).length;
+    const rate = cards.length ? Math.round((unseen / cards.length) * 100) : 0;
+    return { position, unseen, total: cards.length, rate };
+  });
+  els.unseenChart.replaceChildren(...rows.map(({ position, unseen, total, rate }) => {
+    const row = document.createElement("div");
+    row.className = "position-bar-row unseen-bar-row";
+    row.innerHTML = `<span>${position}</span><i><b style="width:${rate}%"></b></i><strong>${rate}%</strong><small>${unseen}/${total}</small>`;
+    return row;
+  }));
 }
 
 function renderEmptyChart(svg, message) {
-  svg.innerHTML = `<text x="120" y="50" text-anchor="middle">${message}</text>`;
+  svg.innerHTML = `<text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle">${message}</text>`;
 }
 
 function renderLineChart(svg, points, options = {}) {
@@ -834,27 +883,43 @@ function renderLineChart(svg, points, options = {}) {
     renderEmptyChart(svg, "まだ履歴なし");
     return;
   }
-  const min = options.min ?? Math.min(...valid, options.target ?? valid[0]);
-  const max = options.max ?? Math.max(...valid, options.target ?? valid[0]);
+  const width = options.width || 240;
+  const height = options.height || 110;
+  const pad = { left: 34, right: 14, top: 16, bottom: 26 };
+  const minRaw = options.min ?? Math.min(...valid, options.target ?? valid[0]);
+  const maxRaw = options.max ?? Math.max(...valid, options.target ?? valid[0]);
+  const spanRaw = Math.max(1, maxRaw - minRaw);
+  const min = Math.floor((minRaw - spanRaw * 0.08) / 10) * 10;
+  const max = Math.ceil((maxRaw + spanRaw * 0.08) / 10) * 10;
   const span = Math.max(1, max - min);
+  const plotW = width - pad.left - pad.right;
+  const plotH = height - pad.top - pad.bottom;
   const coords = points.map((value, idx) => {
-    const x = points.length === 1 ? 120 : (idx / (points.length - 1)) * 216 + 12;
-    const y = 82 - ((value - min) / span) * 62;
+    const x = points.length === 1 ? pad.left + plotW / 2 : pad.left + (idx / (points.length - 1)) * plotW;
+    const y = pad.top + plotH - ((value - min) / span) * plotH;
     return { x, y, value };
   });
   const d = coords.map((point, idx) => `${idx ? "L" : "M"}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
-  const targetY = Number.isFinite(options.target) ? 82 - ((options.target - min) / span) * 62 : null;
-  const dots = coords.map((point) => `<circle class="chip-dot" cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="2.8"></circle>`).join("");
-  const labels = options.labels ? options.labels.map((label, idx) => {
-    const x = coords[idx]?.x ?? 12;
-    return `<text class="axis-label" x="${x.toFixed(1)}" y="104" text-anchor="middle">${label}</text>`;
-  }).join("") : "";
+  const targetY = Number.isFinite(options.target) ? pad.top + plotH - ((options.target - min) / span) * plotH : null;
+  const yTicks = [max, Math.round((max + min) / 2), min];
+  const grid = yTicks.map((tick) => {
+    const y = pad.top + plotH - ((tick - min) / span) * plotH;
+    return `<path class="grid-line" d="M${pad.left},${y.toFixed(1)} L${width - pad.right},${y.toFixed(1)}"></path><text class="axis-label" x="${pad.left - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${tick}${options.suffix || ""}</text>`;
+  }).join("");
+  const sampleEvery = Math.max(1, Math.ceil(coords.length / 14));
+  const dots = coords.map((point, idx) => idx % sampleEvery === 0 || idx === coords.length - 1 ? `<circle class="chip-dot" cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="2.8"><title>${point.value}${options.suffix || ""}</title></circle>` : "").join("");
+  const xLabels = coords.length > 1 ? [
+    { label: "1", x: coords[0].x },
+    { label: String(coords.length), x: coords[coords.length - 1].x }
+  ].map(({ label, x }) => `<text class="axis-label" x="${x.toFixed(1)}" y="${height - 7}" text-anchor="middle">${label}</text>`).join("") : "";
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.innerHTML = `
-    ${targetY !== null ? `<path class="target-line" d="M12,${targetY.toFixed(1)} L228,${targetY.toFixed(1)}"></path>` : ""}
+    ${grid}
+    ${targetY !== null ? `<path class="target-line" d="M${pad.left},${targetY.toFixed(1)} L${width - pad.right},${targetY.toFixed(1)}"></path>` : ""}
     <path class="chip-line" d="${d}"></path>
     ${dots}
-    ${labels}
-    <text class="value-label" x="228" y="14" text-anchor="end">${valid[valid.length - 1]}${options.suffix || ""}</text>
+    ${xLabels}
+    <text class="value-label" x="${width - pad.right}" y="13" text-anchor="end">${valid[valid.length - 1]}${options.suffix || ""}</text>
   `;
 }
 
@@ -1045,9 +1110,22 @@ function move(delta) {
 function moveToNext() {
   if (!filtered.length) return;
   clearAutoAdvance();
+  const previous = filtered[index];
+  const refilteredUnseen = !customDrill && els.modeFilter.value === "unseen";
+  if (refilteredUnseen) {
+    filtered = visibleCards();
+    if (!filtered.length) {
+      index = 0;
+      resetQuestionState();
+      render();
+      return;
+    }
+    const sameIndex = filtered.findIndex((card) => cardId(card) === cardId(previous));
+    index = sameIndex >= 0 ? sameIndex : Math.min(index, filtered.length - 1);
+  }
   const mode = els.orderFilter.value;
   if (mode === "sequence" || filtered.length === 1) {
-    index = (index + 1) % filtered.length;
+    index = refilteredUnseen ? index : (index + 1) % filtered.length;
   } else {
     index = randomNextIndex();
   }
@@ -1064,6 +1142,27 @@ function randomNextIndex() {
   return next;
 }
 
+function initInputsForCurrentCard() {
+  const card = filtered[index];
+  els.frequencySlider.value = "50";
+  els.callSlider.value = "0";
+  const defaultRaise = card && card.openFrequency !== 0 ? card.raiseSize : 0;
+  els.raiseSlider.value = String(defaultRaise || 0);
+}
+
+function unseenCountForCurrentScope() {
+  if (customDrill) {
+    return customDrill.filter((card) => {
+      const stat = stats[cardId(card)] || {};
+      return (stat.good || 0) + (stat.miss || 0) === 0;
+    }).length;
+  }
+  return visibleCards().filter((card) => {
+    const stat = stats[cardId(card)] || {};
+    return (stat.good || 0) + (stat.miss || 0) === 0;
+  }).length;
+}
+
 function resetQuestionState() {
   answered = false;
   currentCorrect = false;
@@ -1071,16 +1170,14 @@ function resetQuestionState() {
   lastGuess = { frequency: 50, call: 0, raise: 2.5 };
   currentPot = { reward: 0, penalty: 0, label: "" };
   lastPot = { reward: 0, penalty: 0, label: "" };
-  els.frequencySlider.value = "50";
-  els.callSlider.value = "0";
-  els.raiseSlider.value = "2.5";
+  initInputsForCurrentCard();
   els.raiseSlider.disabled = false;
   els.raiseControl.classList.remove("is-disabled");
   els.callControl.hidden = true;
   els.controls.hidden = false;
   els.quizControls.hidden = false;
   if (els.actionStrip) els.actionStrip.hidden = true;
-  els.studyScreen.classList.remove("is-sb", "is-correct-result", "is-reviewing");
+  els.studyScreen.classList.remove("is-sb", "is-correct-result", "is-miss-result", "is-reviewing");
 }
 
 function shuffle() {
@@ -1113,7 +1210,7 @@ function recordAnswer(kind, pot = currentPot) {
     penalty: pot.penalty,
     reason: pot.reason || ""
   });
-  history = history.slice(-300);
+  history = history.slice(-6000);
   localStorage.setItem(storageKeys.history, JSON.stringify(history));
   updateAccuracy();
   if (!els.statsScreen.hidden) renderStats();
@@ -1233,6 +1330,7 @@ els.spotFilter.addEventListener("change", resetFilteredDeck);
 els.positionFilter.addEventListener("change", resetFilteredDeck);
 els.orderFilter.addEventListener("change", resetFilteredDeck);
 els.modeFilter.addEventListener("change", resetFilteredDeck);
+if (els.chipWindow) els.chipWindow.addEventListener("change", renderChipChart);
 els.saveDeckButton.addEventListener("click", () => {
   setDeck(JSON.parse(els.deckEditor.value));
 });

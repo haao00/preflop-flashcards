@@ -1497,7 +1497,7 @@ select {
 .chip-line {
   fill: none;
   stroke: var(--gold);
-  stroke-width: 4;
+  stroke-width: 3.2;
   stroke-linecap: round;
   stroke-linejoin: round;
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35));
@@ -1627,7 +1627,7 @@ body.is-home #statsButton {
 .chip-line {
   fill: none;
   stroke: var(--gold);
-  stroke-width: 4;
+  stroke-width: 3.2;
   stroke-linecap: round;
   stroke-linejoin: round;
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35));
@@ -3036,4 +3036,89 @@ body.is-study #studyScreen:not(.is-reviewing) .submit-row {
   body.is-study #studyScreen:not(.is-reviewing) .flashcard {
     gap: 3px;
   }
+}
+
+
+/* Stronger answer state contrast and richer analytics */
+#studyScreen.is-correct-result .flashcard,
+#studyScreen.is-correct-result .result-panel {
+  border-color: rgba(54, 209, 123, 0.78) !important;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(54, 209, 123, 0.24), transparent 36%),
+    linear-gradient(180deg, rgba(7, 74, 41, 0.96), rgba(2, 19, 12, 0.98)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 0 34px rgba(54, 209, 123, 0.28),
+    var(--shadow);
+}
+
+#studyScreen.is-correct-result #answerStatus,
+#studyScreen.is-correct-result #resultTitle {
+  color: #baffd2;
+  font-weight: 900;
+}
+
+#studyScreen.is-miss-result .flashcard,
+#studyScreen.is-miss-result .card-feedback {
+  border-color: rgba(255, 103, 103, 0.82) !important;
+  background:
+    radial-gradient(circle at 50% 14%, rgba(255, 103, 103, 0.24), transparent 36%),
+    linear-gradient(180deg, rgba(84, 13, 18, 0.98), rgba(8, 6, 7, 0.98)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 34px rgba(255, 103, 103, 0.3),
+    var(--shadow);
+}
+
+#studyScreen.is-miss-result .feedback-head strong {
+  color: #ffe0dc;
+}
+
+.chart-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.chart-card-head span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+#chipWindow {
+  width: auto;
+  min-width: 112px;
+  height: 32px;
+  font-size: 0.72rem;
+}
+
+.chart-metrics {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.chart-metrics strong {
+  color: var(--gold);
+  font-size: 0.98rem;
+}
+
+.grid-line {
+  fill: none;
+  stroke: rgba(246, 242, 233, 0.12);
+  stroke-width: 1;
+}
+
+.unseen-bar-row b {
+  background: linear-gradient(90deg, var(--blue), var(--gold));
+}
+
+.line-chart .axis-label {
+  fill: rgba(246, 242, 233, 0.62);
 }
