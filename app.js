@@ -133,6 +133,7 @@ const els = {
   statsScreen: document.querySelector("#statsScreen"),
   rangeScreen: document.querySelector("#rangeScreen"),
   drillScreen: document.querySelector("#drillScreen"),
+  guideScreen: document.querySelector("#guideScreen"),
   homeButton: document.querySelector("#homeButton"),
   statsButton: document.querySelector("#statsButton"),
   studyButton: document.querySelector("#studyButton"),
@@ -140,7 +141,9 @@ const els = {
   openStatsButton: document.querySelector("#openStatsButton"),
   openRangeButton: document.querySelector("#openRangeButton"),
   openDrillButton: document.querySelector("#openDrillButton"),
+  openGuideButton: document.querySelector("#openGuideButton"),
   drillBackButton: document.querySelector("#drillBackButton"),
+  guideBackButton: document.querySelector("#guideBackButton"),
   mixedDrillButton: document.querySelector("#mixedDrillButton"),
   sbCallDrillButton: document.querySelector("#sbCallDrillButton"),
   riskDrillButton: document.querySelector("#riskDrillButton"),
@@ -356,7 +359,9 @@ function render() {
     currentPot = calculatePot(card);
   }
   renderPot();
-  els.flashcard.classList.toggle("is-review", answered && (!currentCorrect || currentRevealed));
+  const reviewing = answered && (!currentCorrect || currentRevealed);
+  els.flashcard.classList.toggle("is-review", reviewing);
+  els.studyScreen.classList.toggle("is-reviewing", reviewing);
   renderCards(card.hand);
   updateSliderLabels();
   if (answered) showResult(card, currentRevealed);
@@ -470,6 +475,7 @@ function renderMistakeFeedback(card, guessedFrequency, guessedCall, guessedRaise
   const feedback = document.createElement("div");
   feedback.className = "card-feedback";
   const reason = lastPot.explain ? `<div class="feedback-reason">${lastPot.explain}</div>` : "";
+  const advice = `<div class="gto-advice"><strong>GTOメモ</strong><span>${gtoAdvice(card)}</span></div>`;
   const rows = [
     meterMarkup("Open", card.openFrequency, guessedFrequency, `${card.openFrequency}%`, `${guessedFrequency}%`),
     usesCall(card) ? meterMarkup("Call", card.callFrequency || 0, guessedCall, `${card.callFrequency || 0}%`, `${guessedCall}%`) : "",
@@ -481,6 +487,7 @@ function renderMistakeFeedback(card, guessedFrequency, guessedCall, guessedRaise
       <span>-${lastPot.penalty} chips</span>
     </div>
     <div class="feedback-summary">正解と選択位置</div>
+    ${advice}
     ${reason}
     <div class="feedback-meters">${rows}</div>
     <div class="compare-legend">
@@ -589,6 +596,39 @@ function applyReward(kind, pot = currentPot) {
   return delta;
 }
 
+function gtoAdvice(card) {
+  const hand = card.hand;
+  const suited = hand.endsWith("s");
+  const offsuit = hand.endsWith("o");
+  const pair = hand.length === 2;
+  const open = card.openFrequency;
+  const call = card.callFrequency || 0;
+  const pos = card.position;
+  const rankText = pair ? "ポケットペア" : suited ? "スーテッドハンド" : offsuit ? "オフスートハンド" : "ハンド";
+
+  if (open === 0 && call === 0) {
+    return `${pos}の${hand}はレンジ外です。後ろに強いレンジが残る場面では、参加しないことでEVを守るのが基本です。`;
+  }
+
+  if (open === 100 && call === 0) {
+    return `${pos}の${hand}は純粋なオープンです。${rankText}として十分な強さがあり、レイズでブラインド獲得と主導権の両方を狙います。`;
+  }
+
+  if (pos === "SB" && call > 0 && open > 0) {
+    return `${pos}の${hand}はレイズとコールを混ぜるスポットです。SBはポジションが悪いため、強く押す頻度とポットを抑える頻度を分けて覚えます。`;
+  }
+
+  if (pos === "SB" && call > 0) {
+    return `${pos}の${hand}はコールが含まれるスポットです。ポジション不利なので、無理にレイズへ寄せず、指定頻度でレンジを守ります。`;
+  }
+
+  if (open > 0 && open < 100) {
+    return `${pos}の${hand}はミックス頻度のオープンです。常に開くほど強くはない一方、フォールドだけではEVを逃すため、頻度でバランスを取ります。`;
+  }
+
+  return `${pos}の${hand}はポジションとレンジ境界を確認するスポットです。早いポジションほどタイトに、後ろのポジションほど広く参加する意識で覚えます。`;
+}
+
 function calculatePot(card) {
   const stat = stats[cardId(card)] || {};
   const attempts = (stat.good || 0) + (stat.miss || 0);
@@ -612,11 +652,11 @@ function calculatePot(card) {
   if (usesCall(card)) reasons.push("SBはコール判断もあるため配当アップ");
   if (isMixedOpen) reasons.push("中途半端な頻度なので配当アップ");
   if (weakBonus) reasons.push("過去にミスが多いため配当アップ");
-  if (!reasons.length) reasons.push("簡単な問題なので配当少なめ、ミスは重め");
+  if (!reasons.length) reasons.push("基本レンジの確認スポット");
   const level = isHardSpot ? "LEVEL 3 難問" : weakBonus ? "LEVEL 2 苦手" : "LEVEL 1 基礎";
   const explain = isHardSpot
-    ? `この問題は${reasons.join("、")}です。難しい問題なので正解時のチップを多めにし、ミス時の減少は中程度にしています。長期的には約${threshold}%以上正解できるとチップが増えます。`
-    : `この問題は${reasons.join("、")}です。正解しやすい問題なので獲得チップは少なめですが、基本レンジのミスは大きく減点します。長期的には約${threshold}%以上正解できるとチップが増えます。`;
+    ? `チップ設計: 難しい判断なので正解時の配当は高め、ミス時の減点は中程度です。長期的には約${threshold}%以上の正答率でプラスになります。`
+    : `チップ設計: 基本レンジの確認なので配当は低め、ミス時の減点は重めです。長期的には約${threshold}%以上の正答率でプラスになります。`;
   const label = isHardSpot ? "難問POT" : "基礎POT";
   return { reward, penalty, threshold, reason: reasons.join(" / "), explain, level, tier: isHardSpot ? "hard" : "easy", label };
 }
@@ -853,6 +893,7 @@ function showScreen(name) {
   els.statsScreen.hidden = name !== "stats";
   els.rangeScreen.hidden = name !== "range";
   els.drillScreen.hidden = name !== "drill";
+  els.guideScreen.hidden = name !== "guide";
   document.body.classList.toggle("is-home", name === "home");
   els.statsButton.textContent = name === "stats" ? "×" : "%";
   els.shuffleButton.hidden = name !== "study";
@@ -1121,9 +1162,11 @@ els.startStudyButton.addEventListener("click", () => {
 els.openStatsButton.addEventListener("click", () => showScreen("stats"));
 els.openRangeButton.addEventListener("click", () => showScreen("range"));
 els.openDrillButton.addEventListener("click", () => showScreen("drill"));
+els.openGuideButton.addEventListener("click", () => showScreen("guide"));
 els.studyButton.addEventListener("click", () => showScreen("study"));
 els.rangeBackButton.addEventListener("click", () => showScreen("home"));
 els.drillBackButton.addEventListener("click", () => showScreen("home"));
+els.guideBackButton.addEventListener("click", () => showScreen("home"));
 els.mixedDrillButton.addEventListener("click", () => startDrill(mixedDrillCards()));
 els.sbCallDrillButton.addEventListener("click", () => startDrill(sbCallDrillCards()));
 els.riskDrillButton.addEventListener("click", () => startDrill(riskDrillCards()));

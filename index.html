@@ -16,7 +16,7 @@
     <main class="app-shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">100bb Preflop</p>
+          <p class="eyebrow">GTOWizard 6max 100bb 50NL</p>
           <h1>Range Cards</h1>
         </div>
         <div class="top-actions">
@@ -31,7 +31,7 @@
       <section class="home-screen" id="homeScreen" aria-label="ホーム">
         <div class="home-hero">
           <p class="eyebrow">Choose seat</p>
-          <h2>Preflop Table</h2>
+          <h2>GTO-GTO Range</h2>
           <div class="home-chip-row">
             <span id="homeStreak">STREAK 0</span>
             <span id="homeChips">CHIPS 0</span>
@@ -56,6 +56,51 @@
             <span>課題</span>
             <strong>Drill</strong>
           </button>
+          <button class="home-card" id="openGuideButton" type="button">
+            <span>使い方</span>
+            <strong>Guide</strong>
+          </button>
+        </div>
+      </section>
+
+      <section class="info-screen" id="guideScreen" hidden aria-label="使い方">
+        <div class="stats-head">
+          <div>
+            <p class="eyebrow">How to use</p>
+            <h2>使い方</h2>
+          </div>
+          <button class="secondary-button compact-button" id="guideBackButton" type="button">戻る</button>
+        </div>
+
+        <div class="guide-stack">
+          <article class="guide-card">
+            <div class="guide-shot practice-shot">
+              <i>UTG · A5s</i><b>LEVEL 3</b><span></span>
+            </div>
+            <strong>1. 問題を見る</strong>
+            <p>ポジションとハンドを見て、GTOのOpen頻度・SBならCall頻度・Raise額を選びます。</p>
+          </article>
+          <article class="guide-card">
+            <div class="guide-shot slider-shot">
+              <i></i><i></i><i></i>
+            </div>
+            <strong>2. スライダーで回答</strong>
+            <p>Open頻度は10%刻みです。Open 0%ならRaise額は自動で「なし」扱いになります。</p>
+          </article>
+          <article class="guide-card">
+            <div class="guide-shot review-shot">
+              <b>GTOメモ</b><span></span><span></span>
+            </div>
+            <strong>3. ミスを復習</strong>
+            <p>不正解時は正解位置・選択位置・ハンド別GTOメモを確認して、次の問題へ進みます。</p>
+          </article>
+          <article class="guide-card">
+            <div class="guide-shot stats-shot">
+              <i></i><i></i><i></i><i></i>
+            </div>
+            <strong>4. 成績で弱点を確認</strong>
+            <p>Statsでは正答率推移、ポジション別、正解/ミス比率、弱点ハンドを見られます。</p>
+          </article>
         </div>
       </section>
 
