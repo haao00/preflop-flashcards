@@ -1,4 +1,4 @@
-const cacheName = "preflop-100bb-v42";
+const cacheName = "preflop-100bb-v44";
 const assets = [
   "./",
   "./index.html",

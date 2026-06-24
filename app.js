@@ -596,6 +596,11 @@ function updateRewards() {
 }
 
 function renderPot() {
+  if (!answered) {
+    els.potStatus.textContent = "レンジ判断";
+    els.potStatus.classList.remove("is-risky");
+    return;
+  }
   els.potStatus.textContent = `正解 +${currentPot.reward} / ミス -${currentPot.penalty}`;
   els.potStatus.classList.toggle("is-risky", currentPot.tier === "hard");
 }
@@ -1146,7 +1151,7 @@ function initInputsForCurrentCard() {
   const card = filtered[index];
   els.frequencySlider.value = "50";
   els.callSlider.value = "0";
-  const defaultRaise = card && card.openFrequency !== 0 ? card.raiseSize : 0;
+  const defaultRaise = card ? card.raiseSize : 2.5;
   els.raiseSlider.value = String(defaultRaise || 0);
 }
 
