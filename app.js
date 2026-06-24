@@ -232,6 +232,8 @@ let answered = false;
 let currentCorrect = false;
 let currentRevealed = false;
 let autoAdvanceTimer = null;
+let autoAdvanceInterval = null;
+let autoAdvanceRemaining = 0;
 let lastGuess = { frequency: 50, call: 0, raise: 2.5 };
 let currentPot = { reward: 0, penalty: 0, label: "" };
 let lastPot = { reward: 0, penalty: 0, label: "" };
@@ -343,7 +345,7 @@ function resetFilteredDeckKeepDrill() {
 function render() {
   const card = filtered[index];
   els.resultPanel.hidden = !answered;
-  els.checkButton.textContent = answered && !currentCorrect ? "次へ" : "判定";
+  updateCheckButtonLabel();
   updateRewards();
 
   if (!card) {
@@ -434,7 +436,7 @@ function updateSliderLabels() {
 function checkAnswer() {
   const card = filtered[index];
   if (!card) return;
-  if (answered && !currentCorrect) {
+  if (answered) {
     moveToNext();
     return;
   }
@@ -451,7 +453,7 @@ function checkAnswer() {
   showResult(card);
   if (currentCorrect) {
     recordAnswer("good", lastPot);
-    scheduleAutoAdvance(1500);
+    scheduleAutoAdvance(10000);
   } else {
     recordAnswer("miss", lastPot);
   }
@@ -1117,18 +1119,40 @@ function recordAnswer(kind, pot = currentPot) {
   if (!els.statsScreen.hidden) renderStats();
 }
 
+function updateCheckButtonLabel() {
+  if (answered && currentCorrect && !currentRevealed) {
+    const seconds = Math.max(0, autoAdvanceRemaining || 10);
+    els.checkButton.textContent = `次へ (${seconds}s)`;
+    return;
+  }
+  els.checkButton.textContent = answered ? "次へ" : "判定";
+}
+
 function scheduleAutoAdvance(delay) {
   clearAutoAdvance();
+  autoAdvanceRemaining = Math.ceil(delay / 1000);
+  updateCheckButtonLabel();
+  autoAdvanceInterval = window.setInterval(() => {
+    autoAdvanceRemaining = Math.max(0, autoAdvanceRemaining - 1);
+    updateCheckButtonLabel();
+  }, 1000);
   autoAdvanceTimer = window.setTimeout(() => {
     autoAdvanceTimer = null;
+    clearAutoAdvance();
     moveToNext();
   }, delay);
 }
 
 function clearAutoAdvance() {
-  if (!autoAdvanceTimer) return;
-  window.clearTimeout(autoAdvanceTimer);
-  autoAdvanceTimer = null;
+  if (autoAdvanceTimer) {
+    window.clearTimeout(autoAdvanceTimer);
+    autoAdvanceTimer = null;
+  }
+  if (autoAdvanceInterval) {
+    window.clearInterval(autoAdvanceInterval);
+    autoAdvanceInterval = null;
+  }
+  autoAdvanceRemaining = 0;
 }
 
 function setDeck(nextDeck) {

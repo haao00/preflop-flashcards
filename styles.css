@@ -2879,7 +2879,16 @@ body.is-home #statsButton {
 }
 
 #studyScreen.is-correct-result .submit-row {
-  display: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: static;
+}
+
+#studyScreen.is-correct-result #checkButton {
+  width: min(260px, 72%);
+  min-height: 48px;
+  font-size: 1.05rem;
 }
 
 #studyScreen.is-correct-result .result-panel {
