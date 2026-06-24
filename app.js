@@ -363,12 +363,14 @@ function render() {
   }
   renderPot();
   const reviewing = answered && (!currentCorrect || currentRevealed);
+  const correctResult = answered && currentCorrect && !currentRevealed;
   els.studyScreen.classList.toggle("is-sb", usesCall(card));
   els.flashcard.classList.toggle("is-review", reviewing);
   els.studyScreen.classList.toggle("is-reviewing", reviewing);
-  els.controls.hidden = reviewing;
-  els.quizControls.hidden = reviewing;
-  els.actionStrip.hidden = reviewing;
+  els.studyScreen.classList.toggle("is-correct-result", correctResult);
+  els.controls.hidden = reviewing || correctResult;
+  els.quizControls.hidden = reviewing || correctResult;
+  if (els.actionStrip) els.actionStrip.hidden = true;
   renderCards(card.hand);
   updateSliderLabels();
   if (answered) showResult(card, currentRevealed);
@@ -1074,8 +1076,8 @@ function resetQuestionState() {
   els.callControl.hidden = true;
   els.controls.hidden = false;
   els.quizControls.hidden = false;
-  els.actionStrip.hidden = false;
-  els.studyScreen.classList.remove("is-sb");
+  if (els.actionStrip) els.actionStrip.hidden = true;
+  els.studyScreen.classList.remove("is-sb", "is-correct-result", "is-reviewing");
 }
 
 function shuffle() {
@@ -1199,8 +1201,8 @@ els.weakList.addEventListener("click", (event) => {
   const row = event.target.closest("[data-position][data-hand]");
   if (row) practiceHand(row.dataset.position, row.dataset.hand);
 });
-els.prevButton.addEventListener("click", () => move(-1));
-els.nextButton.addEventListener("click", moveToNext);
+if (els.prevButton) els.prevButton.addEventListener("click", () => move(-1));
+if (els.nextButton) els.nextButton.addEventListener("click", moveToNext);
 els.shuffleButton.addEventListener("click", shuffle);
 els.spotFilter.addEventListener("change", resetFilteredDeck);
 els.positionFilter.addEventListener("change", resetFilteredDeck);

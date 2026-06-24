@@ -2839,11 +2839,11 @@ body.is-home #statsButton {
 }
 
 #studyScreen.is-reviewing #checkButton {
-  width: min(170px, 44%);
-  min-height: 38px;
-  padding: 0 14px;
-  font-size: 0.92rem;
-  border-radius: 8px;
+  width: min(230px, 64%);
+  min-height: 48px;
+  padding: 0 18px;
+  font-size: 1.04rem;
+  border-radius: 9px;
 }
 
 .feedback-meter .compare-track {
@@ -2856,7 +2856,88 @@ body.is-home #statsButton {
 
 @media (max-height: 760px) {
   #studyScreen.is-reviewing #checkButton {
-    min-height: 36px;
-    font-size: 0.9rem;
+    width: min(210px, 60%);
+    min-height: 44px;
+    font-size: 0.98rem;
+  }
+}
+
+
+/* Correct result layout: free the bottom area after answering */
+#studyScreen.is-correct-result .controls,
+#studyScreen.is-correct-result .quiz-controls,
+#studyScreen.is-correct-result .action-strip {
+  display: none !important;
+}
+
+#studyScreen.is-correct-result .study-panel {
+  gap: 7px;
+}
+
+#studyScreen.is-correct-result .flashcard {
+  min-height: clamp(214px, 32svh, 270px);
+}
+
+#studyScreen.is-correct-result .submit-row {
+  display: none;
+}
+
+#studyScreen.is-correct-result .result-panel {
+  max-height: calc(100svh - 430px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#studyScreen.is-correct-result .result-panel span {
+  font-size: 0.78rem;
+  line-height: 1.34;
+}
+
+#studyScreen:not(.is-reviewing) .action-strip {
+  display: none !important;
+}
+
+@media (max-height: 760px) {
+  #studyScreen.is-correct-result .motivation-row span {
+    min-height: 30px;
+    font-size: 0.76rem;
+  }
+
+  #studyScreen.is-correct-result .pot-row {
+    min-height: 24px;
+    font-size: 0.62rem;
+  }
+
+  #studyScreen.is-correct-result .flashcard {
+    min-height: clamp(188px, 28svh, 230px);
+    padding: 8px;
+  }
+
+  #studyScreen.is-correct-result .result-panel {
+    max-height: calc(100svh - 365px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+}
+
+
+/* Use the removed arrow area to give the study header more presence */
+#studyScreen:not(.is-reviewing):not(.is-sb) .motivation-row span {
+  min-height: 42px;
+  font-size: 0.94rem;
+}
+
+#studyScreen:not(.is-reviewing):not(.is-sb) .pot-row {
+  min-height: 28px;
+  font-size: 0.72rem;
+}
+
+@media (max-height: 760px) {
+  #studyScreen:not(.is-reviewing):not(.is-sb) .motivation-row span {
+    min-height: 38px;
+    font-size: 0.86rem;
+  }
+
+  #studyScreen:not(.is-reviewing):not(.is-sb) .pot-row {
+    min-height: 26px;
+    font-size: 0.68rem;
   }
 }
