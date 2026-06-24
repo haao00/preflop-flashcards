@@ -905,6 +905,7 @@ function showScreen(name) {
   els.drillScreen.hidden = name !== "drill";
   els.guideScreen.hidden = name !== "guide";
   document.body.classList.toggle("is-home", name === "home");
+  document.body.classList.toggle("is-study", name === "study");
   els.statsButton.textContent = name === "stats" ? "×" : "%";
   els.shuffleButton.hidden = name !== "study";
   if (name === "stats") renderStats();

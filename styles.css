@@ -2941,3 +2941,90 @@ body.is-home #statsButton {
     font-size: 0.68rem;
   }
 }
+
+
+/* Study screen vertical balance: larger title area, no wasted bottom space */
+body.is-study {
+  background-size: auto, 118% auto, auto;
+  background-position: center top, center top, center;
+  background-repeat: no-repeat, no-repeat, repeat;
+}
+
+body.is-study .app-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+body.is-study .topbar {
+  min-height: clamp(74px, 10.5svh, 94px);
+  align-items: flex-start;
+  padding-top: 6px;
+  margin-bottom: 10px;
+}
+
+body.is-study .topbar .eyebrow {
+  margin-bottom: 7px;
+  font-size: clamp(0.68rem, 1.9vw, 0.78rem);
+  letter-spacing: 0;
+}
+
+body.is-study .topbar h1 {
+  font-size: clamp(1.32rem, 4.5vw, 1.7rem);
+  line-height: 1;
+}
+
+body.is-study #studyScreen {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+body.is-study #studyScreen:not(.is-reviewing) .study-panel {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+  align-content: stretch;
+  overflow: hidden;
+}
+
+body.is-study #studyScreen:not(.is-reviewing) .flashcard {
+  min-height: 0;
+  align-self: stretch;
+}
+
+body.is-study #studyScreen:not(.is-reviewing) .quiz-controls {
+  align-self: end;
+}
+
+body.is-study #studyScreen:not(.is-reviewing) .submit-row {
+  align-self: end;
+}
+
+@media (max-height: 760px) {
+  body.is-study .topbar {
+    min-height: clamp(64px, 9svh, 78px);
+    margin-bottom: 7px;
+    padding-top: 3px;
+  }
+
+  body.is-study .topbar .eyebrow {
+    margin-bottom: 4px;
+    font-size: 0.64rem;
+  }
+
+  body.is-study .topbar h1 {
+    font-size: 1.22rem;
+  }
+}
+
+@media (max-height: 700px) {
+  body.is-study #studyScreen:not(.is-reviewing) .study-panel {
+    gap: 5px;
+    padding: 6px;
+  }
+
+  body.is-study #studyScreen:not(.is-reviewing) .flashcard {
+    gap: 3px;
+  }
+}
