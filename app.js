@@ -123,7 +123,8 @@ const defaultDeck = Object.entries(openFrequencyMaps).flatMap(([position, rows])
 const storageKeys = {
   deck: "preflop100bb.deck.v4",
   stats: "preflop100bb.stats.v3",
-  rewards: "preflop100bb.rewards.v1"
+  rewards: "preflop100bb.rewards.v1",
+  history: "preflop100bb.history.v1"
 };
 
 const els = {
@@ -131,16 +132,28 @@ const els = {
   studyScreen: document.querySelector("#studyScreen"),
   statsScreen: document.querySelector("#statsScreen"),
   rangeScreen: document.querySelector("#rangeScreen"),
+  drillScreen: document.querySelector("#drillScreen"),
   homeButton: document.querySelector("#homeButton"),
   statsButton: document.querySelector("#statsButton"),
   studyButton: document.querySelector("#studyButton"),
   startStudyButton: document.querySelector("#startStudyButton"),
   openStatsButton: document.querySelector("#openStatsButton"),
   openRangeButton: document.querySelector("#openRangeButton"),
+  openDrillButton: document.querySelector("#openDrillButton"),
+  drillBackButton: document.querySelector("#drillBackButton"),
+  mixedDrillButton: document.querySelector("#mixedDrillButton"),
+  sbCallDrillButton: document.querySelector("#sbCallDrillButton"),
+  riskDrillButton: document.querySelector("#riskDrillButton"),
+  missDrillButton: document.querySelector("#missDrillButton"),
+  mixedDrillCount: document.querySelector("#mixedDrillCount"),
+  sbCallDrillCount: document.querySelector("#sbCallDrillCount"),
+  riskDrillCount: document.querySelector("#riskDrillCount"),
+  missDrillCount: document.querySelector("#missDrillCount"),
   homeStreak: document.querySelector("#homeStreak"),
   homeChips: document.querySelector("#homeChips"),
   cardKicker: document.querySelector("#cardKicker"),
   handTitle: document.querySelector("#handTitle"),
+  flashcard: document.querySelector("#flashcard"),
   cardArt: document.querySelector("#cardArt"),
   answerStatus: document.querySelector("#answerStatus"),
   frequencySlider: document.querySelector("#frequencySlider"),
@@ -183,6 +196,11 @@ const els = {
   statAccuracy: document.querySelector("#statAccuracy"),
   statMisses: document.querySelector("#statMisses"),
   statBestStreak: document.querySelector("#statBestStreak"),
+  recentChart: document.querySelector("#recentChart"),
+  positionChart: document.querySelector("#positionChart"),
+  pieChart: document.querySelector("#pieChart"),
+  chipChart: document.querySelector("#chipChart"),
+  chartNote: document.querySelector("#chartNote"),
   positionStats: document.querySelector("#positionStats"),
   weakList: document.querySelector("#weakList"),
   missPracticeButton: document.querySelector("#missPracticeButton"),
@@ -200,7 +218,9 @@ const els = {
 let deck = normalizeDeck(loadJson(storageKeys.deck, defaultDeck));
 let stats = loadJson(storageKeys.stats, {});
 let rewards = loadJson(storageKeys.rewards, { streak: 0, chips: 0, bestStreak: 0 });
+let history = loadJson(storageKeys.history, []);
 let filtered = [];
+let customDrill = null;
 let index = 0;
 let answered = false;
 let currentCorrect = false;
@@ -286,8 +306,10 @@ function applyFilters() {
   const position = els.positionFilter.value;
   const mode = els.modeFilter.value;
   const randomAll = els.orderFilter.value === "random-all";
-  filtered = deck.filter((card) => {
+  const source = customDrill || deck;
+  filtered = source.filter((card) => {
     const stat = stats[cardId(card)];
+    if (customDrill) return true;
     if (spot !== "all" && card.spot !== spot) return false;
     if (!randomAll && position !== "all" && card.position !== position) return false;
     if (mode === "missed" && (!stat || stat.miss === 0)) return false;
@@ -302,6 +324,12 @@ function applyFilters() {
 }
 
 function resetFilteredDeck() {
+  customDrill = null;
+  index = 0;
+  applyFilters();
+}
+
+function resetFilteredDeckKeepDrill() {
   index = 0;
   applyFilters();
 }
@@ -328,6 +356,7 @@ function render() {
     currentPot = calculatePot(card);
   }
   renderPot();
+  els.flashcard.classList.toggle("is-review", answered && (!currentCorrect || currentRevealed));
   renderCards(card.hand);
   updateSliderLabels();
   if (answered) showResult(card, currentRevealed);
@@ -336,7 +365,20 @@ function render() {
 
 function renderCards(hand) {
   const [left, right] = handToCards(hand);
-  els.cardArt.replaceChildren(cardElement(left), cardElement(right));
+  const wrap = document.createElement("div");
+  wrap.className = "svg-card-stage";
+  wrap.innerHTML = `
+    <svg class="hole-card-svg" viewBox="0 0 320 180" role="img" aria-label="${hand}">
+      <defs>
+        <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="150%">
+          <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#000" flood-opacity="0.34"/>
+        </filter>
+      </defs>
+      ${svgCard(left, 62, 14, -6)}
+      ${svgCard(right, 146, 14, 6)}
+    </svg>
+  `;
+  els.cardArt.replaceChildren(wrap);
 }
 
 function handToCards(hand) {
@@ -347,11 +389,23 @@ function handToCards(hand) {
   return [{ rank: first, suit: suits[0] }, { rank: second, suit: suits[2] }];
 }
 
-function cardElement(card) {
-  const el = document.createElement("span");
-  el.className = `poker-card ${["♥", "♦"].includes(card.suit) ? "is-red" : "is-black"}`;
-  el.innerHTML = `<span>${card.rank}</span><strong>${card.suit}</strong><span>${card.rank}</span>`;
-  return el;
+function svgCard(card, x, y, rotation) {
+  const color = ["♥", "♦"].includes(card.suit) ? "#d12b2b" : "#111";
+  return `
+    <g class="svg-card" transform="translate(${x} ${y}) rotate(${rotation} 56 76)">
+      <rect x="0" y="0" width="112" height="152" rx="12" fill="#fff" stroke="#d9d9d9" stroke-width="1.4" filter="url(#cardShadow)"/>
+      <rect x="4" y="4" width="104" height="144" rx="9" fill="none" stroke="#eeeeee" stroke-width="0.8"/>
+      <g class="svg-index" fill="${color}">
+        <text x="12" y="24" class="svg-rank">${card.rank}</text>
+        <text x="12" y="43" class="svg-suit-small">${card.suit}</text>
+      </g>
+      <text x="56" y="98" class="svg-suit-main" fill="${color}">${card.suit}</text>
+      <g class="svg-index" fill="${color}" transform="translate(100 128) rotate(180)">
+        <text x="0" y="0" class="svg-rank">${card.rank}</text>
+        <text x="0" y="19" class="svg-suit-small">${card.suit}</text>
+      </g>
+    </g>
+  `;
 }
 
 function updateSliderLabels() {
@@ -398,15 +452,62 @@ function showResult(card, revealed = false) {
   const yourRaise = guessedRaise === 0 ? "なし" : `${formatSize(guessedRaise)}bb`;
   const callText = usesCall(card) ? ` / call ${card.callFrequency}%` : "";
   const yourCallText = usesCall(card) ? ` / call ${guessedCall}%` : "";
+  if (!currentCorrect || revealed) {
+    els.resultPanel.hidden = true;
+    renderMistakeFeedback(card, guessedFrequency, guessedCall, guessedRaise, correctRaise, yourRaise);
+    return;
+  }
+
   els.resultPanel.hidden = false;
-  els.resultPanel.classList.toggle("is-correct", currentCorrect && !revealed);
-  els.resultPanel.classList.toggle("is-miss", !currentCorrect || revealed);
-  els.resultTitle.textContent = revealed ? "正解を表示" : currentCorrect ? "正解" : "もう一歩";
-  els.resultDetail.textContent =
-    currentCorrect
-      ? `正解: ${card.openFrequency}% open${callText} / ${correctRaise} · +${lastPot.reward} chips`
-      : `正解: ${card.openFrequency}% open${callText} / ${correctRaise} · 選択: ${guessedFrequency}%${yourCallText} / ${yourRaise} · -${lastPot.penalty} chips`;
+  els.resultPanel.classList.toggle("is-correct", true);
+  els.resultPanel.classList.toggle("is-miss", false);
+  els.resultTitle.textContent = "正解";
+  els.resultDetail.textContent = `正解: ${card.openFrequency}% open${callText} / ${correctRaise} · +${lastPot.reward} chips · ${lastPot.explain}`;
   renderComparison(card, guessedFrequency, guessedCall, guessedRaise);
+}
+
+function renderMistakeFeedback(card, guessedFrequency, guessedCall, guessedRaise, correctRaise, yourRaise) {
+  const feedback = document.createElement("div");
+  feedback.className = "card-feedback";
+  const reason = lastPot.explain ? `<div class="feedback-reason">${lastPot.explain}</div>` : "";
+  const rows = [
+    meterMarkup("Open", card.openFrequency, guessedFrequency, `${card.openFrequency}%`, `${guessedFrequency}%`),
+    usesCall(card) ? meterMarkup("Call", card.callFrequency || 0, guessedCall, `${card.callFrequency || 0}%`, `${guessedCall}%`) : "",
+    meterMarkup("Raise", raiseToPercent(card.openFrequency === 0 ? 0 : card.raiseSize), raiseToPercent(guessedRaise), correctRaise, yourRaise, "なし", "3bb")
+  ].join("");
+  feedback.innerHTML = `
+    <div class="feedback-head">
+      <strong>もう一歩</strong>
+      <span>-${lastPot.penalty} chips</span>
+    </div>
+    <div class="feedback-summary">正解と選択位置</div>
+    ${reason}
+    <div class="feedback-meters">${rows}</div>
+    <div class="compare-legend">
+      <span><i class="answer-dot"></i>正解</span>
+      <span><i class="guess-dot"></i>選択</span>
+    </div>
+  `;
+  els.cardArt.replaceChildren(feedback);
+}
+
+function meterMarkup(label, answerPercent, guessPercent, answerLabel, guessLabel, minLabel = "0%", maxLabel = "100%") {
+  return `
+    <div class="feedback-row">
+      <span>${label}</span>
+      <div class="feedback-meter">
+        <div class="compare-track">
+          <i class="answer-marker" style="left:${clampPercent(answerPercent)}%"><b>${answerLabel}</b></i>
+          <i class="guess-marker" style="left:${clampPercent(guessPercent)}%"><b>${guessLabel}</b></i>
+        </div>
+        <div class="compare-ticks"><span>${minLabel}</span><span>${maxLabel}</span></div>
+      </div>
+    </div>
+  `;
+}
+
+function clampPercent(value) {
+  return Math.max(0, Math.min(100, Number(value) || 0));
 }
 
 function renderComparison(card, guessedFrequency, guessedCall, guessedRaise) {
@@ -455,15 +556,16 @@ function updateRewards() {
   rewards.streak = Number(rewards.streak || 0);
   rewards.chips = Number(rewards.chips || 0);
   rewards.bestStreak = Number(rewards.bestStreak || 0);
-  els.streakStatus.textContent = `STREAK ${rewards.streak}`;
+  const streakText = rewards.streak >= 2 ? `${rewards.streak}連続正解！` : rewards.streak === 1 ? "次で連続正解" : "STREAK 0";
+  els.streakStatus.textContent = streakText;
   els.chipStatus.textContent = `CHIPS ${rewards.chips}`;
-  els.homeStreak.textContent = `STREAK ${rewards.streak}`;
+  els.homeStreak.textContent = streakText;
   els.homeChips.textContent = `CHIPS ${rewards.chips}`;
 }
 
 function renderPot() {
-  els.potStatus.textContent = `${currentPot.label} +${currentPot.reward} / -${currentPot.penalty}`;
-  els.potStatus.classList.toggle("is-risky", currentPot.reward >= 28);
+  els.potStatus.textContent = `${currentPot.level} · 正解 +${currentPot.reward} / ミス -${currentPot.penalty}`;
+  els.potStatus.classList.toggle("is-risky", currentPot.tier === "hard");
 }
 
 function rewardMessage() {
@@ -474,32 +576,49 @@ function rewardMessage() {
 }
 
 function applyReward(kind, pot = currentPot) {
+  const delta = kind === "good" ? pot.reward : -pot.penalty;
   if (kind === "good") {
     rewards.streak = Number(rewards.streak || 0) + 1;
     rewards.bestStreak = Math.max(Number(rewards.bestStreak || 0), rewards.streak);
-    rewards.chips = Number(rewards.chips || 0) + pot.reward;
   } else {
     rewards.streak = 0;
-    rewards.chips = Math.max(0, Number(rewards.chips || 0) - pot.penalty);
   }
+  rewards.chips = Number(rewards.chips || 0) + delta;
   localStorage.setItem(storageKeys.rewards, JSON.stringify(rewards));
   updateRewards();
+  return delta;
 }
 
 function calculatePot(card) {
   const stat = stats[cardId(card)] || {};
   const attempts = (stat.good || 0) + (stat.miss || 0);
   const missRate = attempts ? (stat.miss || 0) / attempts : 0;
+  const isMixedOpen = card.openFrequency > 0 && card.openFrequency < 100;
+  const hasCallMix = usesCall(card) && (card.callFrequency || 0) > 0;
+  const isHardSpot = usesCall(card) || isMixedOpen || hasCallMix;
   const frequencyEdge = Math.min(card.openFrequency, 100 - card.openFrequency);
-  const mixedDifficulty = frequencyEdge > 0 ? Math.round((frequencyEdge / 50) * 10) : 0;
-  const callDifficulty = usesCall(card) && card.callFrequency > 0 ? Math.round(Math.min(card.callFrequency, 100 - card.callFrequency) / 50 * 8) : 0;
-  const weakBonus = Math.round(missRate * 14);
-  const streakBonus = Math.min(Number(rewards.streak || 0), 8);
-  const variance = stableVariance(cardId(card), attempts + Number(rewards.chips || 0));
-  const reward = 8 + mixedDifficulty + callDifficulty + weakBonus + streakBonus + variance;
-  const penalty = Math.max(4, Math.round(reward * (0.35 + missRate * 0.35)));
-  const label = reward >= 28 ? "HIGH RISK POT" : mixedDifficulty >= 7 ? "MIX POT" : "POT";
-  return { reward, penalty, label };
+  const mixedBonus = isMixedOpen ? 3 + Math.round((frequencyEdge / 50) * 4) : 0;
+  const sbBonus = usesCall(card) ? 3 : 0;
+  const callBonus = hasCallMix ? 2 : 0;
+  const weakBonus = Math.min(6, Math.round(missRate * 7));
+  const variance = isHardSpot ? stableVariance(cardId(card), attempts + Number(rewards.chips || 0)) % 3 : stableVariance(cardId(card), attempts) % 2;
+  const reward = isHardSpot
+    ? 7 + mixedBonus + sbBonus + callBonus + weakBonus + variance
+    : 2 + weakBonus + variance;
+  const penaltyMultiplier = isHardSpot ? 6.5 : 13.5;
+  const penalty = Math.round(reward * penaltyMultiplier);
+  const threshold = Math.round((penalty / (reward + penalty)) * 100);
+  const reasons = [];
+  if (usesCall(card)) reasons.push("SBはコール判断もあるため配当アップ");
+  if (isMixedOpen) reasons.push("中途半端な頻度なので配当アップ");
+  if (weakBonus) reasons.push("過去にミスが多いため配当アップ");
+  if (!reasons.length) reasons.push("簡単な問題なので配当少なめ、ミスは重め");
+  const level = isHardSpot ? "LEVEL 3 難問" : weakBonus ? "LEVEL 2 苦手" : "LEVEL 1 基礎";
+  const explain = isHardSpot
+    ? `この問題は${reasons.join("、")}です。難しい問題なので正解時のチップを多めにし、ミス時の減少は中程度にしています。長期的には約${threshold}%以上正解できるとチップが増えます。`
+    : `この問題は${reasons.join("、")}です。正解しやすい問題なので獲得チップは少なめですが、基本レンジのミスは大きく減点します。長期的には約${threshold}%以上正解できるとチップが増えます。`;
+  const label = isHardSpot ? "難問POT" : "基礎POT";
+  return { reward, penalty, threshold, reason: reasons.join(" / "), explain, level, tier: isHardSpot ? "hard" : "easy", label };
 }
 
 function stableVariance(seed, salt) {
@@ -542,6 +661,7 @@ function renderStats() {
   els.statMisses.textContent = String(miss);
   els.statBestStreak.textContent = String(rewards.bestStreak || 0);
   renderPositionStats();
+  renderCharts(good, miss);
   renderWeakHands();
 }
 
@@ -573,6 +693,117 @@ function renderPositionStats() {
       return row;
     })
   );
+}
+
+function renderCharts(good, miss) {
+  els.chartNote.textContent = "";
+  renderAccuracyChart();
+  renderPositionBarChart();
+  renderPieChart(good, miss);
+  renderChipChart();
+}
+
+function renderAccuracyChart() {
+  const recent = history.slice(-30);
+  if (!recent.length) {
+    renderEmptyChart(els.recentChart, "まだ履歴なし");
+    return;
+  }
+  let good = 0;
+  const points = recent.map((item, idx) => {
+    if (item.correct) good += 1;
+    return Math.round((good / (idx + 1)) * 100);
+  });
+  renderLineChart(els.recentChart, points, { min: 0, max: 100, suffix: "%", target: 90 });
+}
+
+function renderPositionBarChart() {
+  const rows = positionOrder.map((position) => {
+    const cards = deck.filter((card) => card.position === position);
+    const totals = cards.reduce((sum, card) => {
+      const stat = stats[cardId(card)] || {};
+      sum.good += stat.good || 0;
+      sum.miss += stat.miss || 0;
+      return sum;
+    }, { good: 0, miss: 0 });
+    const total = totals.good + totals.miss;
+    const rate = total ? Math.round((totals.good / total) * 100) : 0;
+    return { position, total, rate };
+  });
+  if (rows.every((row) => row.total === 0)) {
+    els.positionChart.innerHTML = `<p class="chart-empty">まだ履歴なし</p>`;
+    return;
+  }
+  els.positionChart.replaceChildren(...rows.map(({ position, rate, total }) => {
+    const row = document.createElement("div");
+    row.className = "position-bar-row";
+    row.innerHTML = `<span>${position}</span><i><b style="width:${rate}%"></b></i><strong>${rate}%</strong><small>${total}</small>`;
+    return row;
+  }));
+}
+
+function renderPieChart(good, miss) {
+  const total = good + miss;
+  if (!total) {
+    renderEmptyChart(els.pieChart, "まだ履歴なし");
+    return;
+  }
+  const goodRate = Math.round((good / total) * 100);
+  const missRate = 100 - goodRate;
+  const circumference = 2 * Math.PI * 34;
+  const goodDash = (goodRate / 100) * circumference;
+  els.pieChart.innerHTML = `
+    <circle class="pie-bg" cx="58" cy="58" r="34"></circle>
+    <circle class="pie-good" cx="58" cy="58" r="34" stroke-dasharray="${goodDash} ${circumference - goodDash}"></circle>
+    <text class="pie-main" x="58" y="55" text-anchor="middle">${goodRate}%</text>
+    <text class="pie-sub" x="58" y="72" text-anchor="middle">正解</text>
+    <text class="pie-legend good" x="108" y="48">正解 ${good}</text>
+    <text class="pie-legend miss" x="108" y="70">ミス ${miss}</text>
+    <text class="pie-note" x="108" y="94">ミス率 ${missRate}%</text>
+  `;
+}
+
+function renderChipChart() {
+  const points = history.slice(-30).map((item) => item.chips);
+  if (!points.length) {
+    renderEmptyChart(els.chipChart, "まだ履歴なし");
+    return;
+  }
+  renderLineChart(els.chipChart, points, { suffix: "", target: 0 });
+}
+
+function renderEmptyChart(svg, message) {
+  svg.innerHTML = `<text x="120" y="50" text-anchor="middle">${message}</text>`;
+}
+
+function renderLineChart(svg, points, options = {}) {
+  const valid = points.filter((point) => Number.isFinite(point));
+  if (!valid.length) {
+    renderEmptyChart(svg, "まだ履歴なし");
+    return;
+  }
+  const min = options.min ?? Math.min(...valid, options.target ?? valid[0]);
+  const max = options.max ?? Math.max(...valid, options.target ?? valid[0]);
+  const span = Math.max(1, max - min);
+  const coords = points.map((value, idx) => {
+    const x = points.length === 1 ? 120 : (idx / (points.length - 1)) * 216 + 12;
+    const y = 82 - ((value - min) / span) * 62;
+    return { x, y, value };
+  });
+  const d = coords.map((point, idx) => `${idx ? "L" : "M"}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
+  const targetY = Number.isFinite(options.target) ? 82 - ((options.target - min) / span) * 62 : null;
+  const dots = coords.map((point) => `<circle class="chip-dot" cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="2.8"></circle>`).join("");
+  const labels = options.labels ? options.labels.map((label, idx) => {
+    const x = coords[idx]?.x ?? 12;
+    return `<text class="axis-label" x="${x.toFixed(1)}" y="104" text-anchor="middle">${label}</text>`;
+  }).join("") : "";
+  svg.innerHTML = `
+    ${targetY !== null ? `<path class="target-line" d="M12,${targetY.toFixed(1)} L228,${targetY.toFixed(1)}"></path>` : ""}
+    <path class="chip-line" d="${d}"></path>
+    ${dots}
+    ${labels}
+    <text class="value-label" x="228" y="14" text-anchor="end">${valid[valid.length - 1]}${options.suffix || ""}</text>
+  `;
 }
 
 function renderWeakHands() {
@@ -621,14 +852,53 @@ function showScreen(name) {
   els.studyScreen.hidden = name !== "study";
   els.statsScreen.hidden = name !== "stats";
   els.rangeScreen.hidden = name !== "range";
+  els.drillScreen.hidden = name !== "drill";
+  document.body.classList.toggle("is-home", name === "home");
   els.statsButton.textContent = name === "stats" ? "×" : "%";
   els.shuffleButton.hidden = name !== "study";
   if (name === "stats") renderStats();
   if (name === "range") renderRangeMap();
+  if (name === "drill") renderDrillRoom();
   updateRewards();
 }
 
+function renderDrillRoom() {
+  els.mixedDrillCount.textContent = `${mixedDrillCards().length} spots`;
+  els.sbCallDrillCount.textContent = `${sbCallDrillCards().length} spots`;
+  els.riskDrillCount.textContent = `${riskDrillCards().length} spots`;
+  els.missDrillCount.textContent = `${missDrillCards().length} spots`;
+}
+
+function mixedDrillCards() {
+  return deck.filter((card) => (card.openFrequency > 0 && card.openFrequency < 100) || (card.callFrequency || 0) > 0);
+}
+
+function sbCallDrillCards() {
+  return deck.filter((card) => card.position === "SB" && (card.callFrequency || 0) > 0);
+}
+
+function riskDrillCards() {
+  return deck
+    .filter((card) => calculatePot(card).reward >= 12)
+    .sort((a, b) => calculatePot(b).reward - calculatePot(a).reward);
+}
+
+function missDrillCards() {
+  return deck.filter((card) => (stats[cardId(card)] || {}).miss > 0);
+}
+
+function startDrill(cards) {
+  customDrill = cards.slice();
+  if (!customDrill.length) return;
+  els.positionFilter.value = "all";
+  els.modeFilter.value = "all";
+  els.orderFilter.value = "random-all";
+  showScreen("study");
+  resetFilteredDeckKeepDrill();
+}
+
 function practiceMisses() {
+  customDrill = null;
   els.modeFilter.value = "missed";
   els.orderFilter.value = els.positionFilter.value === "all" ? "random-all" : "random-position";
   showScreen("study");
@@ -636,6 +906,7 @@ function practiceMisses() {
 }
 
 function practiceAllRandom() {
+  customDrill = null;
   els.positionFilter.value = "all";
   els.modeFilter.value = "all";
   els.orderFilter.value = "random-all";
@@ -648,6 +919,7 @@ function practiceRangePosition() {
 }
 
 function practicePosition(position) {
+  customDrill = null;
   els.positionFilter.value = position;
   els.modeFilter.value = "all";
   els.orderFilter.value = "random-position";
@@ -656,6 +928,7 @@ function practicePosition(position) {
 }
 
 function practiceHand(position, hand) {
+  customDrill = null;
   const foundIndex = deck.findIndex((card) => card.position === position && card.hand === hand);
   if (foundIndex === -1) return;
   els.positionFilter.value = position;
@@ -769,7 +1042,21 @@ function recordAnswer(kind, pot = currentPot) {
   stats[id] = stats[id] || { good: 0, miss: 0 };
   stats[id][kind] += 1;
   localStorage.setItem(storageKeys.stats, JSON.stringify(stats));
-  applyReward(kind, pot);
+  const delta = applyReward(kind, pot);
+  history.push({
+    at: Date.now(),
+    id,
+    position: card.position,
+    hand: card.hand,
+    correct: kind === "good",
+    delta,
+    chips: Number(rewards.chips || 0),
+    reward: pot.reward,
+    penalty: pot.penalty,
+    reason: pot.reason || ""
+  });
+  history = history.slice(-300);
+  localStorage.setItem(storageKeys.history, JSON.stringify(history));
   updateAccuracy();
   if (!els.statsScreen.hidden) renderStats();
 }
@@ -827,11 +1114,20 @@ els.raiseSlider.addEventListener("input", () => {
 els.checkButton.addEventListener("click", checkAnswer);
 els.homeButton.addEventListener("click", () => showScreen("home"));
 els.statsButton.addEventListener("click", () => showScreen(els.statsScreen.hidden ? "stats" : "study"));
-els.startStudyButton.addEventListener("click", () => showScreen("study"));
+els.startStudyButton.addEventListener("click", () => {
+  resetFilteredDeck();
+  showScreen("study");
+});
 els.openStatsButton.addEventListener("click", () => showScreen("stats"));
 els.openRangeButton.addEventListener("click", () => showScreen("range"));
+els.openDrillButton.addEventListener("click", () => showScreen("drill"));
 els.studyButton.addEventListener("click", () => showScreen("study"));
 els.rangeBackButton.addEventListener("click", () => showScreen("home"));
+els.drillBackButton.addEventListener("click", () => showScreen("home"));
+els.mixedDrillButton.addEventListener("click", () => startDrill(mixedDrillCards()));
+els.sbCallDrillButton.addEventListener("click", () => startDrill(sbCallDrillCards()));
+els.riskDrillButton.addEventListener("click", () => startDrill(riskDrillCards()));
+els.missDrillButton.addEventListener("click", () => startDrill(missDrillCards()));
 els.rangePosition.addEventListener("change", renderRangeMap);
 els.practiceRangeButton.addEventListener("click", practiceRangePosition);
 els.rangeGrid.addEventListener("click", (event) => {

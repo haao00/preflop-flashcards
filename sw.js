@@ -1,4 +1,4 @@
-const cacheName = "preflop-100bb-v16";
+const cacheName = "preflop-100bb-v23";
 const assets = [
   "./",
   "./index.html",
@@ -6,7 +6,9 @@ const assets = [
   "./app.js",
   "./manifest.webmanifest",
   "./icons/icon.svg",
-  "./assets/casino-table.png"
+  "./assets/casino-table.png",
+  "./assets/poker-card-scene.png",
+  "./assets/card-squeeze-scene.png"
 ];
 
 self.addEventListener("install", (event) => {

@@ -36,6 +36,7 @@
             <span id="homeStreak">STREAK 0</span>
             <span id="homeChips">CHIPS 0</span>
           </div>
+          <p class="home-copy">正確に答えるほどチップが増え、ミスは大きく響きます</p>
         </div>
 
         <div class="home-menu">
@@ -48,8 +49,45 @@
             <strong>Stats</strong>
           </button>
           <button class="home-card" id="openRangeButton" type="button">
-            <span>レンジ表</span>
+            <span>表</span>
             <strong>Range</strong>
+          </button>
+          <button class="home-card" id="openDrillButton" type="button">
+            <span>課題</span>
+            <strong>Drill</strong>
+          </button>
+        </div>
+      </section>
+
+      <section class="drill-screen" id="drillScreen" hidden aria-label="課題ドリル">
+        <div class="stats-head">
+          <div>
+            <p class="eyebrow">Focus</p>
+            <h2>Drill Room</h2>
+          </div>
+          <button class="secondary-button compact-button" id="drillBackButton" type="button">戻る</button>
+        </div>
+
+        <div class="drill-board">
+          <button class="drill-card" id="mixedDrillButton" type="button">
+            <span>Mix</span>
+            <strong>頻度ミックスだけ</strong>
+            <small id="mixedDrillCount">0 spots</small>
+          </button>
+          <button class="drill-card" id="sbCallDrillButton" type="button">
+            <span>SB</span>
+            <strong>コール判断だけ</strong>
+            <small id="sbCallDrillCount">0 spots</small>
+          </button>
+          <button class="drill-card" id="riskDrillButton" type="button">
+            <span>Pot</span>
+            <strong>ハイリスク問題</strong>
+            <small id="riskDrillCount">0 spots</small>
+          </button>
+          <button class="drill-card" id="missDrillButton" type="button">
+            <span>Miss</span>
+            <strong>ミスした問題</strong>
+            <small id="missDrillCount">0 spots</small>
           </button>
         </div>
       </section>
@@ -158,7 +196,7 @@
           <strong id="resultTitle">正解</strong>
           <span id="resultDetail">正解: 100% open / 2bb</span>
           <div class="compare-stack" id="compareStack" aria-label="正解位置と選択位置">
-            <div class="compare-row" id="callCompareRow">
+            <div class="compare-row">
               <span>Open</span>
               <div class="compare-meter">
                 <div class="compare-track">
@@ -170,7 +208,7 @@
                 </div>
               </div>
             </div>
-            <div class="compare-row">
+            <div class="compare-row" id="callCompareRow">
               <span>Call</span>
               <div class="compare-meter">
                 <div class="compare-track call-track">
@@ -236,6 +274,31 @@
           <div class="stat-tile">
             <span>Best</span>
             <strong id="statBestStreak">0</strong>
+          </div>
+        </div>
+
+        <div class="stats-block chart-block">
+          <div class="stats-title">
+            <strong>Graphs</strong>
+            <span class="chart-note" id="chartNote" hidden></span>
+          </div>
+          <div class="chart-grid">
+            <div class="chart-card wide-chart">
+              <span>正答率推移</span>
+              <svg class="line-chart" id="recentChart" viewBox="0 0 240 110" role="img" aria-label="正答率推移"></svg>
+            </div>
+            <div class="chart-card wide-chart">
+              <span>ポジション別正答率</span>
+              <div class="bar-chart" id="positionChart" role="img" aria-label="ポジション別正答率"></div>
+            </div>
+            <div class="chart-card wide-chart">
+              <span>正解 / ミス比率</span>
+              <svg class="pie-chart" id="pieChart" viewBox="0 0 180 120" role="img" aria-label="正解とミスの比率"></svg>
+            </div>
+            <div class="chart-card wide-chart">
+              <span>チップ推移</span>
+              <svg class="line-chart" id="chipChart" viewBox="0 0 240 110" role="img" aria-label="チップ推移"></svg>
+            </div>
           </div>
         </div>
 
