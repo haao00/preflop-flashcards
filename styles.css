@@ -2418,3 +2418,401 @@ body.is-home #statsButton {
   .home-card { min-height: 98px; }
   .home-hero { min-height: 156px; }
 }
+
+
+/* Hard fix: review layout must never clip on iPhone */
+#studyScreen.is-reviewing {
+  height: calc(100svh - 58px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  min-height: 0;
+  overflow: hidden;
+}
+
+#studyScreen.is-reviewing .study-panel {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 6px;
+  overflow: hidden;
+  padding: 7px;
+}
+
+#studyScreen.is-reviewing .controls,
+#studyScreen.is-reviewing .quiz-controls,
+#studyScreen.is-reviewing .result-panel,
+#studyScreen.is-reviewing .action-strip {
+  display: none !important;
+}
+
+#studyScreen.is-reviewing .motivation-row span {
+  min-height: 30px;
+  font-size: 0.76rem;
+}
+
+#studyScreen.is-reviewing .pot-row {
+  min-height: 24px;
+  padding: 3px 8px;
+  font-size: 0.6rem;
+  line-height: 1.2;
+}
+
+#studyScreen.is-reviewing .flashcard.is-review {
+  min-height: 0 !important;
+  height: 100%;
+  align-self: stretch;
+  overflow: hidden;
+  padding: 8px;
+}
+
+#studyScreen.is-reviewing .card-art {
+  min-height: 0 !important;
+  height: 100%;
+  align-self: stretch;
+  overflow: hidden;
+}
+
+#studyScreen.is-reviewing .card-feedback {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: none !important;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  align-content: start;
+  gap: 8px;
+  padding: 11px 11px 14px;
+}
+
+#studyScreen.is-reviewing .feedback-head strong {
+  font-size: 1.08rem;
+}
+
+#studyScreen.is-reviewing .feedback-head span {
+  font-size: 0.72rem;
+  padding: 4px 7px;
+}
+
+#studyScreen.is-reviewing .feedback-summary {
+  font-size: 0.72rem;
+}
+
+#studyScreen.is-reviewing .gto-advice {
+  padding: 8px;
+  gap: 4px;
+}
+
+#studyScreen.is-reviewing .gto-advice strong {
+  font-size: 0.68rem;
+}
+
+#studyScreen.is-reviewing .gto-advice span,
+#studyScreen.is-reviewing .feedback-reason {
+  font-size: 0.72rem;
+  line-height: 1.36;
+}
+
+#studyScreen.is-reviewing .feedback-meters {
+  gap: 9px;
+}
+
+#studyScreen.is-reviewing .feedback-row {
+  grid-template-columns: 46px 1fr;
+}
+
+#studyScreen.is-reviewing .feedback-meter {
+  padding-top: 15px;
+}
+
+#studyScreen.is-reviewing .submit-row {
+  position: static;
+}
+
+#studyScreen.is-reviewing #checkButton {
+  min-height: 44px;
+  font-size: 1rem;
+}
+
+@media (max-height: 760px) {
+  #studyScreen.is-reviewing {
+    height: calc(100svh - 50px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+  #studyScreen.is-reviewing .motivation-row {
+    display: none;
+  }
+  #studyScreen.is-reviewing .study-panel {
+    grid-template-rows: auto 1fr auto;
+  }
+  #studyScreen.is-reviewing .card-feedback {
+    padding: 9px 9px 12px;
+    gap: 7px;
+  }
+}
+
+
+/* Final iPhone layout corrections */
+.home-screen {
+  align-content: start;
+}
+
+.home-hero {
+  min-height: clamp(132px, 20svh, 168px);
+}
+
+.home-menu {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+}
+
+.home-menu .home-card:last-child {
+  grid-column: 1 / -1;
+  min-height: 86px;
+}
+
+#studyScreen.is-reviewing .controls[hidden],
+#studyScreen.is-reviewing .quiz-controls[hidden],
+#studyScreen.is-reviewing .action-strip[hidden] {
+  display: none !important;
+}
+
+#studyScreen.is-reviewing .study-panel {
+  grid-template-rows: auto auto 1fr auto !important;
+}
+
+@media (max-height: 860px) {
+  .home-hero { min-height: 126px; }
+  .home-menu .home-card:last-child { min-height: 80px; }
+}
+
+
+/* Home balance: keep buttons lower instead of stretching the last card */
+.home-screen {
+  display: flex !important;
+  flex-direction: column;
+  align-content: stretch;
+}
+
+.home-menu {
+  margin-top: auto;
+}
+
+.home-menu .home-card:last-child {
+  grid-column: auto;
+  min-height: 122px;
+}
+
+@media (max-height: 860px) {
+  .home-menu .home-card:last-child {
+    min-height: 98px;
+  }
+}
+
+
+/* Home lower placement and compare label edge safety */
+.home-screen {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
+}
+
+.home-hero {
+  min-height: clamp(112px, 16svh, 145px) !important;
+}
+
+.home-menu {
+  margin-top: auto !important;
+  transform: translateY(10px);
+}
+
+@media (max-height: 860px) {
+  .home-hero { min-height: 108px !important; }
+  .home-menu { transform: translateY(8px); }
+}
+
+.compare-track {
+  margin-inline: 8px;
+}
+
+.feedback-meter .compare-track {
+  margin-inline: 14px;
+}
+
+.answer-marker b,
+.guess-marker b {
+  max-width: 54px;
+}
+
+.answer-marker[style*="100%"] b,
+.guess-marker[style*="100%"] b {
+  left: auto;
+  right: -7px;
+  transform: none;
+}
+
+.answer-marker[style*="0%"] b,
+.guess-marker[style*="0%"] b {
+  left: -7px;
+  transform: none;
+}
+
+
+/* Stronger iPhone home anchoring and comparison marker safety */
+.home-screen {
+  position: relative;
+  display: block !important;
+  height: calc(100dvh - 72px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  min-height: 0;
+  overflow: hidden;
+}
+
+.home-hero {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 10px;
+  min-height: clamp(118px, 18dvh, 150px) !important;
+}
+
+.home-menu {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: calc(env(safe-area-inset-bottom) + 6px);
+  margin-top: 0 !important;
+  transform: none !important;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.home-card {
+  min-height: clamp(86px, 11.5dvh, 116px);
+}
+
+.home-menu .home-card:last-child {
+  min-height: clamp(86px, 11.5dvh, 116px);
+}
+
+.compare-meter {
+  overflow: visible;
+}
+
+.compare-track {
+  margin-inline: 20px !important;
+}
+
+.feedback-meter .compare-track {
+  margin-inline: 24px !important;
+}
+
+.answer-marker b,
+.guess-marker b {
+  min-width: 42px;
+  max-width: none;
+}
+
+@media (max-height: 760px) {
+  .home-hero {
+    min-height: 104px !important;
+    padding: 12px;
+  }
+  .home-card {
+    min-height: 76px;
+  }
+  .home-menu .home-card:last-child {
+    min-height: 76px;
+  }
+}
+
+
+/* SB has 3 controls: compact layout with no button overlap */
+#studyScreen.is-sb:not(.is-reviewing) .study-panel {
+  gap: 5px;
+  padding: 7px;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) .motivation-row span {
+  min-height: 30px;
+  font-size: 0.76rem;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) .pot-row {
+  min-height: 24px;
+  font-size: 0.62rem;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) .controls {
+  gap: 5px;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) select {
+  height: 32px;
+  font-size: 0.72rem;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) .flashcard {
+  min-height: 0;
+  padding: 8px;
+  gap: 4px;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) .card-main {
+  font-size: 2.45rem;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) .card-art {
+  min-height: 96px;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) .svg-card-stage {
+  width: min(100%, 270px);
+}
+
+#studyScreen.is-sb:not(.is-reviewing) .card-sub {
+  font-size: 0.72rem;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) .quiz-controls {
+  gap: 4px;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) .slider-card {
+  padding: 6px 8px;
+  gap: 3px;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) .slider-head label {
+  font-size: 0.62rem;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) .slider-head output {
+  font-size: 0.98rem;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) input[type="range"] {
+  height: 20px;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) input[type="range"]::-webkit-slider-thumb {
+  width: 24px;
+  height: 24px;
+  margin-top: -8px;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) .tick-row {
+  font-size: 0.58rem;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) .submit-row {
+  position: static;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) #checkButton {
+  min-height: 48px;
+  font-size: 1.08rem;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) .action-strip {
+  margin-top: 4px;
+}
+
+#studyScreen.is-sb:not(.is-reviewing) .action-strip button {
+  height: 32px;
+}

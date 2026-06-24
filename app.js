@@ -159,6 +159,9 @@ const els = {
   flashcard: document.querySelector("#flashcard"),
   cardArt: document.querySelector("#cardArt"),
   answerStatus: document.querySelector("#answerStatus"),
+  controls: document.querySelector(".controls"),
+  quizControls: document.querySelector(".quiz-controls"),
+  actionStrip: document.querySelector(".action-strip"),
   frequencySlider: document.querySelector("#frequencySlider"),
   frequencyValue: document.querySelector("#frequencyValue"),
   callControl: document.querySelector("#callControl"),
@@ -360,8 +363,12 @@ function render() {
   }
   renderPot();
   const reviewing = answered && (!currentCorrect || currentRevealed);
+  els.studyScreen.classList.toggle("is-sb", usesCall(card));
   els.flashcard.classList.toggle("is-review", reviewing);
   els.studyScreen.classList.toggle("is-reviewing", reviewing);
+  els.controls.hidden = reviewing;
+  els.quizControls.hidden = reviewing;
+  els.actionStrip.hidden = reviewing;
   renderCards(card.hand);
   updateSliderLabels();
   if (answered) showResult(card, currentRevealed);
@@ -514,7 +521,11 @@ function meterMarkup(label, answerPercent, guessPercent, answerLabel, guessLabel
 }
 
 function clampPercent(value) {
-  return Math.max(0, Math.min(100, Number(value) || 0));
+  return markerPercent(value);
+}
+
+function markerPercent(value) {
+  return Math.max(6, Math.min(94, Number(value) || 0));
 }
 
 function renderComparison(card, guessedFrequency, guessedCall, guessedRaise) {
@@ -535,7 +546,7 @@ function renderComparison(card, guessedFrequency, guessedCall, guessedRaise) {
 }
 
 function setMarker(marker, percent) {
-  marker.style.left = `${Math.max(0, Math.min(100, percent))}%`;
+  marker.style.left = `${markerPercent(percent)}%`;
 }
 
 function raiseToPercent(value) {
@@ -1064,6 +1075,10 @@ function resetQuestionState() {
   els.raiseSlider.disabled = false;
   els.raiseControl.classList.remove("is-disabled");
   els.callControl.hidden = true;
+  els.controls.hidden = false;
+  els.quizControls.hidden = false;
+  els.actionStrip.hidden = false;
+  els.studyScreen.classList.remove("is-sb");
 }
 
 function shuffle() {
